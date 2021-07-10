@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -48,14 +49,18 @@ func main() {
 
 	c.Start()
 	fmt.Println("cron has started..")
-	/*	port := os.Getenv("PORT")
-		if port == "" {
-			port = "9000" // Default port if not specified
-		}
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			fmt.Printf("Error caused while starting the server")
-		}*/
-	select {}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello!")
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "9000" // Default port if not specified
+	}
+	fmt.Printf("Starting server at port %s\n",port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		fmt.Printf("Error caused while starting the server")
+	}
 }
 
 func cronJob() {
@@ -202,7 +207,7 @@ func getMarketStatus() (float64, error) {
 
 	body, httpErr := ioutil.ReadAll(resp.Body)
 	if httpErr != nil {
-		fmt.Printf("Error at ioutil.ReadAll : %v\n",httpErr)
+		fmt.Printf("Error at ioutil.ReadAll : %v\n", httpErr)
 		return marketVal, httpErr
 	}
 

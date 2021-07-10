@@ -55,7 +55,6 @@ func main() {
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			log.Fatal(err)
 		}*/
-		select{}
 
 }
 
@@ -69,11 +68,12 @@ func cronJob() {
 			fmt.Printf("Cron is running\n")
 			return
 		}*/
-
+fmt.Println("Running the cron job function.")
 	t = findThursday(t)
 	strikeDate := t.Format("02-Jan-2006")
-
+fmt.Println("above the get optionData fucntion call")
 	niftyData, _ := getOptionData()
+	fmt.Println("After the get optiondata function call")
 	niftyOpt := &Nifty{}
 	jsonErr := json.Unmarshal(niftyData, niftyOpt)
 	if jsonErr != nil {

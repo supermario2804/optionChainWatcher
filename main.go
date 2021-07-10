@@ -202,6 +202,7 @@ func getMarketStatus() (float64, error) {
 
 	body, httpErr := ioutil.ReadAll(resp.Body)
 	if httpErr != nil {
+		fmt.Printf("Error at ioutil.ReadAll : %v\n",httpErr)
 		return marketVal, httpErr
 	}
 

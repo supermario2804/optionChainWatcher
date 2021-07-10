@@ -160,12 +160,15 @@ func getOptionData() ([]byte, error) {
 
 	resp, httpErr := httpClient.Do(req)
 	if httpErr != nil || resp.StatusCode != 200 {
-		time.Sleep(15 * time.Second)
-		return getOptionData()
+		//time.Sleep(15 * time.Second)
+		fmt.Printf("This is error at 164: %v\n",httpErr)
+		//return getOptionData()
+		return tempData, httpErr
 	}
 
 	body, httpErr := ioutil.ReadAll(resp.Body)
 	if httpErr != nil {
+		fmt.Printf("This is error at 171 : %v\n",httpErr)
 		return tempData, httpErr
 	}
 

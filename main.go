@@ -85,6 +85,7 @@ func cronJob() {
 	}
 
 	textMsg := fmt.Sprintf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
+	fmt.Printf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
 	midStrkPrice := int(currNifty/100) * 100
 	strkPrceList := make([]int, 0)
 
@@ -216,7 +217,7 @@ func sendToTelegram(text string) error {
 		ChatID int    `json:"chat_id"`
 		Text   string `json:"text"`
 	}
-	msg.ChatID = 494607383
+	msg.ChatID = 1371114495
 	msg.Text = text
 	jsonMsg, jsonErr := json.Marshal(msg)
 	if jsonErr != nil {

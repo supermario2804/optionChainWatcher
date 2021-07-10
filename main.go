@@ -47,8 +47,14 @@ func main() {
 	}
 
 	c.Start()
-	fmt.Sprintf("cron has started..")
-	select {}
+	fmt.Println("cron has started..")
+	/*	port := os.Getenv("PORT")
+		if port == "" {
+			port = "9000" // Default port if not specified
+		}
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			log.Fatal(err)
+		}*/
 
 }
 

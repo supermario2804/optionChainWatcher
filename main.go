@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"time"
-	"os"
 
 	"github.com/robfig/cron"
 )
@@ -49,13 +48,13 @@ func main() {
 
 	c.Start()
 	fmt.Println("cron has started..")
-		port := os.Getenv("PORT")
+	/*	port := os.Getenv("PORT")
 		if port == "" {
 			port = "9000" // Default port if not specified
 		}
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			fmt.Printf("Error caused while starting the server")
-		}
+		}*/
 
 }
 
@@ -69,10 +68,10 @@ func cronJob() {
 			fmt.Printf("Cron is running\n")
 			return
 		}*/
-fmt.Println("Running the cron job function.")
+	fmt.Println("Running the cron job function.")
 	t = findThursday(t)
 	strikeDate := t.Format("02-Jan-2006")
-fmt.Println("above the get optionData fucntion call")
+	fmt.Println("above the get optionData fucntion call")
 	niftyData, _ := getOptionData()
 	fmt.Println("After the get optiondata function call")
 	niftyOpt := &Nifty{}

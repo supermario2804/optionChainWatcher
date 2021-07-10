@@ -57,7 +57,7 @@ func main() {
 	if port == "" {
 		port = "9000" // Default port if not specified
 	}
-	fmt.Printf("Starting server at port %s\n",port)
+	fmt.Printf("Starting server at port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		fmt.Printf("Error caused while starting the server")
 	}
@@ -200,9 +200,9 @@ func getMarketStatus() (float64, error) {
 
 	resp, httpErr := httpClient.Do(req)
 	if httpErr != nil || resp.StatusCode != 200 {
-		time.Sleep(15 * time.Second)
 		fmt.Printf("This is httpErr : %v\n", httpErr)
-		return getMarketStatus()
+		//return getMarketStatus()
+		return marketVal, httpErr
 	}
 
 	body, httpErr := ioutil.ReadAll(resp.Body)
@@ -217,8 +217,10 @@ func getMarketStatus() (float64, error) {
 	fmt.Printf("This is status code : %v\n", resp.StatusCode)
 	jsonErr := json.Unmarshal(body, &tempMarket)
 	if jsonErr != nil {
-		time.Sleep(15 * time.Second)
-		return getMarketStatus()
+		//time.Sleep(15 * time.Second)
+		fmt.Printf("This is jsonErr : %v\n",jsonErr)
+		//return getMarketStatus()
+		return marketVal, jsonErr
 	}
 	tempMap := tempMarket["marketState"][0].(map[string]interface{})
 	marketVal = tempMap["last"].(float64)

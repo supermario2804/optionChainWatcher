@@ -42,12 +42,12 @@ type Option struct {
 func main() {
 
 	c := cron.New()
-	err := c.AddFunc("@every 30s", cronJob)
+	err := c.AddFunc("@every 2m", cronJob)
 	if err != nil {
 		fmt.Println("Cron error : ", err)
 	}
 
-	//c.Start()
+	c.Start()
 	cronJob()
 	fmt.Println("cron has started..")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +65,18 @@ func main() {
 }
 
 func cronJob() {
+	flag := job()
+	for i := 0; i < 4; i++ {
+		if !flag {
+			flag = job()
+			time.Sleep(1*time.Minute)
+		} else {
+			return
+		}
+	}
+}
+
+func job() bool {
 	loc, _ := time.LoadLocation("Asia/Kolkata")
 	t := time.Now().In(loc)
 	/*	a, _, _ := t.Clock()
@@ -77,14 +89,16 @@ func cronJob() {
 	fmt.Println("Running the cron job function.")
 	t = findThursday(t)
 	strikeDate := t.Format("02-Jan-2006")
-	fmt.Println("above the get optionData fucntion call")
-	niftyData, _ := getOptionData()
-	fmt.Println("After the get optiondata function call")
+	niftyData, err := getOptionData()
+	if err != nil {
+		return false
+	}
+
 	niftyOpt := &Nifty{}
-	jsonErr := json.Unmarshal(niftyData, niftyOpt)
-	if jsonErr != nil {
-		fmt.Println("This is error1: ", jsonErr)
-		debug.PrintStack()
+	err = json.Unmarshal(niftyData, niftyOpt)
+	if err != nil {
+		fmt.Printf("This error in Job function: %v\n", err)
+		return false
 	}
 	data := niftyOpt.Filtered.Data
 	optMap := map[string]OptionData{}
@@ -94,8 +108,7 @@ func cronJob() {
 
 	currNifty, marketErr := getMarketStatus()
 	if marketErr != nil {
-		fmt.Println("This is error2: ", marketErr)
-		debug.PrintStack()
+		return false
 	}
 
 	textMsg := fmt.Sprintf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
@@ -128,12 +141,12 @@ func cronJob() {
 		textMsg = textMsg + "\n" + oiData
 	}
 
-	telegramErr := sendToTelegram(textMsg)
-	if telegramErr != nil {
-		fmt.Println("This is error3: ", telegramErr)
-		debug.PrintStack()
+	err = sendToTelegram(textMsg)
+	if err != nil {
+		return false
 	}
 
+	return true
 }
 
 func getOptionData() ([]byte, error) {
@@ -152,24 +165,27 @@ func getOptionData() ([]byte, error) {
 	//h.Add("Accept-Encoding", "gzip, deflate, br")
 	h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
 	b := bytes.NewBuffer([]byte("{}"))
-	req, httpErr := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
-	if httpErr != nil {
-		return tempData, httpErr
+	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
+	if err != nil {
+		fmt.Printf("This is error in getOptionData function: %v\n", err)
+		debug.PrintStack()
+		return tempData, err
 	}
 	req.Header = h
 
-	resp, httpErr := httpClient.Do(req)
-	if httpErr != nil || resp.StatusCode != 200 {
-		//time.Sleep(15 * time.Second)
-		fmt.Printf("This is error at 164: %v\n",httpErr)
-		//return getOptionData()
-		return tempData, httpErr
+	resp, err := httpClient.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		fmt.Printf("This is error in getOptionData function : %v\n", err)
+		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
+		debug.PrintStack()
+		return tempData, err
 	}
 
-	body, httpErr := ioutil.ReadAll(resp.Body)
-	if httpErr != nil {
-		fmt.Printf("This is error at 171 : %v\n",httpErr)
-		return tempData, httpErr
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("This is error in getOptionData function : %v\n", err)
+		debug.PrintStack()
+		return tempData, err
 	}
 
 	_ = resp.Body.Close()
@@ -196,36 +212,40 @@ func getMarketStatus() (float64, error) {
 	//h.Add("Accept-Encoding", "gzip, deflate, br")
 	h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
 	b := bytes.NewBuffer([]byte("{}"))
-	req, httpErr := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/marketStatus", b)
-	if httpErr != nil {
-		return 0, httpErr
+
+	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/marketStatus", b)
+	if err != nil {
+		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
+		debug.PrintStack()
+		return marketVal, err
 	}
+
 	req.Header = h
 
-	resp, httpErr := httpClient.Do(req)
-	if httpErr != nil || resp.StatusCode != 200 {
-		fmt.Printf("This is httpErr : %v\n", httpErr)
-		//return getMarketStatus()
-		return marketVal, httpErr
+	resp, err := httpClient.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
+		fmt.Printf("This is resp status code : %v\n", resp.StatusCode)
+		debug.PrintStack()
+		return marketVal, err
 	}
 
-	body, httpErr := ioutil.ReadAll(resp.Body)
-	if httpErr != nil {
-		fmt.Printf("Error at ioutil.ReadAll : %v\n", httpErr)
-		return marketVal, httpErr
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
+		debug.PrintStack()
+		return marketVal, err
 	}
 
 	_ = resp.Body.Close()
 
-	//fmt.Println(string(body))
-	fmt.Printf("This is status code : %v\n", resp.StatusCode)
 	jsonErr := json.Unmarshal(body, &tempMarket)
 	if jsonErr != nil {
-		//time.Sleep(15 * time.Second)
-		fmt.Printf("This is jsonErr : %v\n",jsonErr)
-		//return getMarketStatus()
-		return marketVal, jsonErr
+		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
+		debug.PrintStack()
+		return marketVal, err
 	}
+
 	tempMap := tempMarket["marketState"][0].(map[string]interface{})
 	marketVal = tempMap["last"].(float64)
 
@@ -240,16 +260,21 @@ func sendToTelegram(text string) error {
 	}
 	msg.ChatID = 1371114495
 	msg.Text = text
-	jsonMsg, jsonErr := json.Marshal(msg)
-	if jsonErr != nil {
-		return jsonErr
+	jsonMsg, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Printf("This is the error : %v\n", err)
+		debug.PrintStack()
+		return err
 	}
 
 	reqBody := bytes.NewBuffer(jsonMsg)
 
-	resp, httpErr := http.Post(sendMsgURL, "application/json", reqBody)
-	if httpErr != nil || resp.StatusCode != 200 {
-		return httpErr
+	resp, err := http.Post(sendMsgURL, "application/json", reqBody)
+	if err != nil || resp.StatusCode != 200 {
+		fmt.Printf("This is the error : %v\n", err)
+		fmt.Printf("This is statuscode : %v\n", resp.StatusCode)
+		debug.PrintStack()
+		return err
 	}
 
 	return nil

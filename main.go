@@ -55,7 +55,7 @@ func main() {
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			fmt.Printf("Error caused while starting the server")
 		}*/
-select{}
+	select {}
 }
 
 func cronJob() {
@@ -196,6 +196,7 @@ func getMarketStatus() (float64, error) {
 	resp, httpErr := httpClient.Do(req)
 	if httpErr != nil || resp.StatusCode != 200 {
 		time.Sleep(15 * time.Second)
+		fmt.Printf("This is httpErr : %v\n", httpErr)
 		return getMarketStatus()
 	}
 

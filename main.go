@@ -10,8 +10,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"time"
-
-	"github.com/robfig/cron"
 )
 
 var (
@@ -41,18 +39,16 @@ type Option struct {
 
 func main() {
 
-	c := cron.New()
-	err := c.AddFunc("@every 1m", cronJob)
-	if err != nil {
-		fmt.Println("Cron error : ", err)
-	}
+	/*	c := cron.New()
+		err := c.AddFunc("@every 1m", cronJob)
+		if err != nil {
+			fmt.Println("Cron error : ", err)
+		}
 
-	c.Start()
-	//cronJob()
-	fmt.Println("cron has started..")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello!")
-	})
+		c.Start()
+		//cronJob()
+		fmt.Println("cron has started..")*/
+	http.HandleFunc("/", cronJob)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -60,12 +56,12 @@ func main() {
 	}
 	fmt.Printf("Starting server at port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Printf("Error caused while starting the server")
+		fmt.Printf("Error caused while starting the server: %v\n",err)
 	}
 }
 
-func cronJob() {
-	flag := job()
+func cronJob(w http.ResponseWriter, r *http.Request) {
+	/*flag := job()
 	for i := 0; i < 4; i++ {
 		if !flag {
 			flag = job()
@@ -73,10 +69,11 @@ func cronJob() {
 		} else {
 			return
 		}
-	}
+	}*/
+	fmt.Printf(job())
 }
 
-func job() bool {
+func job() string {
 	loc, _ := time.LoadLocation("Asia/Kolkata")
 	t := time.Now().In(loc)
 	/*	a, _, _ := t.Clock()
@@ -91,7 +88,7 @@ func job() bool {
 	strikeDate := t.Format("02-Jan-2006")
 	niftyData, err := getOptionData()
 	if err != nil {
-		return false
+		return "Error Occured"
 	}
 
 	niftyOpt := &Nifty{}
@@ -99,7 +96,7 @@ func job() bool {
 	if err != nil {
 		fmt.Printf("This error in Job function: %v\n", err)
 		debug.PrintStack()
-		return false
+		return "Error Occured"
 	}
 	data := niftyOpt.Filtered.Data
 	optMap := map[string]OptionData{}
@@ -109,7 +106,7 @@ func job() bool {
 
 	currNifty, marketErr := getMarketStatus()
 	if marketErr != nil {
-		return false
+		return "Error Occured"
 	}
 
 	textMsg := fmt.Sprintf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
@@ -142,12 +139,12 @@ func job() bool {
 		textMsg = textMsg + "\n" + oiData
 	}
 
-	err = sendToTelegram(textMsg)
+	/*err = sendToTelegram(textMsg)
 	if err != nil {
-		return false
-	}
+		return "Error Occured"
+	}*/
 
-	return true
+		return textMsg
 }
 
 func getOptionData() ([]byte, error) {

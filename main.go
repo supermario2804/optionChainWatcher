@@ -169,7 +169,7 @@ func getOptionData() ([]byte, error) {
 	h.Add("Connection", "keep-alive")
 	h.Add("User-Agent", "PostmanRuntime/7.26.8")
 	h.Add("Accept", "*/*")
-	h.Add("Cookie", cookie)
+	//h.Add("Cookie", cookie)
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
 	if err != nil {

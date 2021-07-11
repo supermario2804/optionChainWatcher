@@ -172,10 +172,6 @@ func getOptionData() ([]byte, error) {
 	h.Add("sec-fetch-site", "same-origin")
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
-	resp, _ := http.Get("https://www.nseindia.com")
-	for _, cookie := range resp.Cookies() {
-		req.AddCookie(cookie)
-	}
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function: %v\n", err)
 		debug.PrintStack()
@@ -183,7 +179,7 @@ func getOptionData() ([]byte, error) {
 	}
 	req.Header = h
 
-	resp, err = httpClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)
 		debug.PrintStack()

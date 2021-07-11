@@ -48,7 +48,7 @@ func main() {
 	}
 
 	c.Start()
-	cronJob()
+	//cronJob()
 	fmt.Println("cron has started..")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello!")

@@ -154,15 +154,15 @@ func getOptionData() ([]byte, error) {
 	var tempData []byte
 	httpClient := &http.Client{}
 	h := http.Header{}
-	h.Add("DNT", "1")
-	h.Add("Upgrade-Insecure-Requests", "1")
-	h.Add("Sec-Fetch-User", "?1")
-	h.Add("Sec-Fetch-Site", "none")
-	h.Add("Sec-Fetch-Mode", "navigate")
+	//h.Add("DNT", "1")
+	//h.Add("Upgrade-Insecure-Requests", "1")
+	//h.Add("Sec-Fetch-User", "?1")
+	//h.Add("Sec-Fetch-Site", "none")
+	//h.Add("Sec-Fetch-Mode", "navigate")
 	//h.Add("Accept-Encoding", "gzip, deflate, br")
-	h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
-	h.Add("cache-control", "no-cache")
-	h.Add("sec-fetch-dest", "empty")
+	//h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
+	//h.Add("cache-control", "no-cache")
+	//h.Add("sec-fetch-dest", "empty")
 	//h.Add("sec-fetch-mode", "cors")
 	//h.Add("sec-fetch-site", "same-origin")
 	h.Add("Host", "www.nseindia.com")

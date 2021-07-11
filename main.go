@@ -10,7 +10,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"time"
-	"crypto/tls"
 )
 
 var (
@@ -57,7 +56,7 @@ func main() {
 	}
 	fmt.Printf("Starting server at port %s\n", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Printf("Error caused while starting the server: %v\n",err)
+		fmt.Printf("Error caused while starting the server: %v\n", err)
 	}
 }
 
@@ -145,15 +144,12 @@ func job() string {
 		return "Error Occured"
 	}*/
 
-		return textMsg
+	return textMsg
 }
 
 func getOptionData() ([]byte, error) {
 	var tempData []byte
-	tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
-    httpClient := &http.Client{Transport: tr}
+	httpClient := &http.Client{}
 	h := http.Header{}
 	h.Add("Connection", "keep-alive")
 	h.Add("Cache-Control", "max-age=0")
@@ -192,6 +188,8 @@ func getOptionData() ([]byte, error) {
 
 	if resp.StatusCode != 200 {
 		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string(body))
 		debug.PrintStack()
 		return tempData, fmt.Errorf("Failed to get optiondata with status code : %v\n", resp.StatusCode)
 	}

@@ -10,6 +10,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"time"
+	"crypto/tls"
 )
 
 var (
@@ -149,7 +150,10 @@ func job() string {
 
 func getOptionData() ([]byte, error) {
 	var tempData []byte
-	httpClient := &http.Client{}
+	tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+    httpClient := &http.Client{Transport: tr}
 	h := http.Header{}
 	h.Add("Connection", "keep-alive")
 	h.Add("Cache-Control", "max-age=0")

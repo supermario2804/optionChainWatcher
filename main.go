@@ -49,7 +49,7 @@ func main() {
 		c.Start()
 		//cronJob()
 		fmt.Println("cron has started..")*/
-	getCookiesLocally()
+	go getCookiesLocally()
 	http.HandleFunc("/", cronJob)
 
 	port := os.Getenv("PORT")
@@ -340,6 +340,10 @@ func getCookiesLocally() {
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)
 		debug.PrintStack()
+	}
+
+	if resp.StatusCode != 200 {
+		getCookiesLocally()
 	}
 
 	setCookiesLocally(resp.Cookies())

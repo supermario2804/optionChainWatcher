@@ -42,7 +42,7 @@ type Option struct {
 func main() {
 
 	c := cron.New()
-	err := c.AddFunc("@every 2m", cronJob)
+	err := c.AddFunc("@every 5m", cronJob)
 	if err != nil {
 		fmt.Println("Cron error : ", err)
 	}
@@ -69,7 +69,7 @@ func cronJob() {
 	for i := 0; i < 4; i++ {
 		if !flag {
 			flag = job()
-			time.Sleep(1*time.Minute)
+			time.Sleep(1 * time.Minute)
 		} else {
 			return
 		}
@@ -98,6 +98,7 @@ func job() bool {
 	err = json.Unmarshal(niftyData, niftyOpt)
 	if err != nil {
 		fmt.Printf("This error in Job function: %v\n", err)
+		debug.PrintStack()
 		return false
 	}
 	data := niftyOpt.Filtered.Data
@@ -174,11 +175,16 @@ func getOptionData() ([]byte, error) {
 	req.Header = h
 
 	resp, err := httpClient.Do(req)
-	if err != nil || resp.StatusCode != 200 {
+	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)
-		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
 		debug.PrintStack()
 		return tempData, err
+	}
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
+		debug.PrintStack()
+		return tempData, fmt.Errorf("Failed to get optiondata with status code : %v\n", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -190,7 +196,7 @@ func getOptionData() ([]byte, error) {
 
 	_ = resp.Body.Close()
 
-	//fmt.Println(string(body))
+	fmt.Printf("This is option data response body: %v\n", string(body))
 
 	return body, nil
 }
@@ -223,11 +229,16 @@ func getMarketStatus() (float64, error) {
 	req.Header = h
 
 	resp, err := httpClient.Do(req)
-	if err != nil || resp.StatusCode != 200 {
+	if err != nil {
 		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
-		fmt.Printf("This is resp status code : %v\n", resp.StatusCode)
 		debug.PrintStack()
 		return marketVal, err
+	}
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("This is resp status code : %v\n", resp.StatusCode)
+		debug.PrintStack()
+		return marketVal, fmt.Errorf("Got non-success code while fetching market status data : %v\n", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -238,9 +249,10 @@ func getMarketStatus() (float64, error) {
 	}
 
 	_ = resp.Body.Close()
+	fmt.Printf("This is response body : market status : %s\n", string(body))
 
-	jsonErr := json.Unmarshal(body, &tempMarket)
-	if jsonErr != nil {
+	err = json.Unmarshal(body, &tempMarket)
+	if err != nil {
 		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
 		debug.PrintStack()
 		return marketVal, err
@@ -270,11 +282,15 @@ func sendToTelegram(text string) error {
 	reqBody := bytes.NewBuffer(jsonMsg)
 
 	resp, err := http.Post(sendMsgURL, "application/json", reqBody)
-	if err != nil || resp.StatusCode != 200 {
+	if err != nil {
 		fmt.Printf("This is the error : %v\n", err)
-		fmt.Printf("This is statuscode : %v\n", resp.StatusCode)
 		debug.PrintStack()
 		return err
+	}
+
+	if resp.StatusCode != 200 {
+		debug.PrintStack()
+		return fmt.Errorf("Got non-success code while telegram message : %v\n", resp.StatusCode)
 	}
 
 	return nil

@@ -169,7 +169,7 @@ func getOptionData() ([]byte, error) {
 	h.Add("Connection", "keep-alive")
 	h.Add("User-Agent", "PostmanRuntime/7.26.8")
 	h.Add("Accept", "*/*")
-	h.Add("Cookie", "ak_bmsc=BCDF1DD4841FEAD1DB49F3207B2BAC0A~000000000000000000000000000000~YAAQrowsMTlYmot6AQAAYPvulQx1Z3FthUf+ZHFKd22qo1OI/R1LW8kh0B37HbXIJ05JpfAzNQLtF+Usp2d7cnyey3x2n3z8UHnduI/ITnhM3W8sFuTxFBa/Vb1Vl1k49/tpUN7J7RG81MACEZoHeiRbD2bb5mQWuKYDDGRM0mIPk9IbMz1BRo6wv+1kkNH/WjwJX6ES12sYTd/mCh2qSthDOwjdfGegCY6xfecPi+M0ClketnYX3absLA8wwvmCBgmyul04I2b6uoAj8dKddEarR7Ggu13KlJJ94PF+BAPsYKLYPiigmoWScszEY1J5FRREEALRgLFpt6HIizoFVu5tCq05JgNttTjuGnjiZGis8Aw8e4dBgrk6vOw=; bm_sv=2220A41865CD4F6A8060696136607056~VxlpiQKErmw4FkDoN5VkQ1AIKLCy8yIjbkL0vgQfYPxhca/7V3Q1U0Wt8M4cQcoa2EUppUxIs9eRM0oeWg8HnljjwwYqJWBlvHZ7wBX/qRG/5fe/3L2iwf188kVjJ2umvEHX4eRJ4G5XL06Kq3RkO/Q3S4mWyrQ+fMJMIpekyDg=")
+	h.Add("Cookie", "ak_bmsc=BCDF1DD4841FEAD1DB49F3207B2BAC0A~000000000000000000000000000000~YAAQrowsMTlYmot6AQAAYPvulQx1Z3FthUf+ZHFKd22qo1OI/R1LW8kh0B37HbXIJ05JpfAzNQLtF+Usp2d7cnyey3x2n3z8UHnduI/ITnhM3W8sFuTxFBa/Vb1Vl1k49/tpUN7J7RG81MACEZoHeiRbD2bb5mQWuKYDDGRM0mIPk9IbMz1BRo6wv+1kkNH/WjwJX6ES12sYTd/mCh2qSthDOwjdfGegCY6xfecPi+M0ClketnYX3absLA8wwvmCBgmyul04I2b6uoAj8dKddEarR7Ggu13KlJJ94PF+BAPsYKLYPiigmoWScszEY1J5FRREEALRgLFpt6HIizoFVu5tCq05JgNttTjuGnjiZGis8Aw8e4dBgrk6vOw=;")
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
 	if err != nil {

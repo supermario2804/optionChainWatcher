@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	cookie string
 	botURL = "https://api.telegram.org/bot1835262567:AAG16zksc089ULVg0AYlTFxbG0XjszEhKCY"
 )
 
@@ -48,6 +49,7 @@ func main() {
 		c.Start()
 		//cronJob()
 		fmt.Println("cron has started..")*/
+	getCookiesLocally()
 	http.HandleFunc("/", cronJob)
 
 	port := os.Getenv("PORT")
@@ -70,13 +72,14 @@ func cronJob(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}*/
-	fmt.Printf(job())
+	job()
 }
 
 func job() string {
 	loc, _ := time.LoadLocation("Asia/Kolkata")
 	t := time.Now().In(loc)
 	/*	a, _, _ := t.Clock()
+
 
 		weekday := int(t.Weekday())
 		if !(a > 8 && a < 19 && weekday > 0 && weekday < 6) {
@@ -90,7 +93,7 @@ func job() string {
 	if err != nil {
 		return "Error Occured"
 	}
-
+	fmt.Printf("Successfully fetched optiondata:")
 	niftyOpt := &Nifty{}
 	err = json.Unmarshal(niftyData, niftyOpt)
 	if err != nil {
@@ -139,10 +142,10 @@ func job() string {
 		textMsg = textMsg + "\n" + oiData
 	}
 
-	/*err = sendToTelegram(textMsg)
+	err = sendToTelegram(textMsg)
 	if err != nil {
 		return "Error Occured"
-	}*/
+	}
 
 	return textMsg
 }
@@ -151,13 +154,11 @@ func getOptionData() ([]byte, error) {
 	var tempData []byte
 	httpClient := &http.Client{}
 	h := http.Header{}
-	h.Add("Connection", "keep-alive")
 	h.Add("Cache-Control", "max-age=0")
 	h.Add("DNT", "1")
 	h.Add("Upgrade-Insecure-Requests", "1")
 	h.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36")
 	h.Add("Sec-Fetch-User", "?1")
-	//h.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
 	h.Add("Sec-Fetch-Site", "none")
 	h.Add("Sec-Fetch-Mode", "navigate")
 	//h.Add("Referer", "https://www1.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp?symbolCode=-9999&symbol=NIFTY&symbol=BANKNIFTY&instrument=OPTIDX&date=-&segmentLink=17&segmentLink=17")
@@ -170,7 +171,9 @@ func getOptionData() ([]byte, error) {
 	h.Add("sec-fetch-dest", "empty")
 	h.Add("sec-fetch-mode", "cors")
 	h.Add("sec-fetch-site", "same-origin")
-	h.Add("Cookie", "ak_bmsc=167EA72D29D45F65B5559433973D5D91~000000000000000000000000000000~YAAQrowsMcwdmot6AQAAl2nJlQwxCTSPDArz0gQu1+yWjGVm/Vf3kNekDYgbEh3D/oZviiCx37ppFuCjaWINATl/TPD2XSUR0vWGLMRX2hFEKY6d0MQFiA70SjXMisn1lGSJ+8b1zTehYS/ml6BJt95CQPiZPvpp0kYi3299KP/lvF8tWS9i8b669Cbwoac0Y5mCJ7q/eVdivb0MUYxZbqDPx1HQ7lMbZ3inpbIppdqT9OG/xwWPcB1DQP4QoWGoY+kUDbphWzss2bzg0rRKtvou34g99eNZfsdJxwyHfuE4+ZnlK9yI+r7Sj5lJyPQFzZozIH5VEhQE0RjsrRQ40HGGcdlQK9nZoHkd10RrRuraAiP7jzbOW5ZBEgs=; bm_sv=31C95FFE0CCA8E6D092285D64CB004E1~VxlpiQKErmw4FkDoN5VkQwW3ushQDQHWmFcpQmZfbxYKCpLB8WgWBOdCb8Ql3qD8McFJ818tss2RkIcO7L+WwMLR9mFeQP6NnL7TpImGeju9tRk/8mgPb5V6wrW2RwXOr8pUygHDgcM5s0NqHpnHAuaj66z8SuLECRcUlNtLmcw=")
+	h.Add("Host", "www.nseindia.com")
+	h.Add("Connection", "keep-alive")
+	h.Add("Cookie", cookie)
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
 	if err != nil {
@@ -187,6 +190,7 @@ func getOptionData() ([]byte, error) {
 		return tempData, err
 	}
 
+	setCookiesLocally(resp.Cookies())
 	if resp.StatusCode != 200 {
 		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -203,8 +207,6 @@ func getOptionData() ([]byte, error) {
 	}
 
 	_ = resp.Body.Close()
-
-	fmt.Printf("This is option data response body: %v\n", string(body))
 
 	return body, nil
 }
@@ -315,4 +317,40 @@ func findThursday(t time.Time) time.Time {
 	t = t.Add(-time.Duration(t.Add(-4*day).Weekday()) * day)
 	// check all subsequent Fridays
 	return t
+}
+
+func getCookiesLocally() {
+	httpClient := &http.Client{}
+	h := http.Header{}
+	h.Add("User-Agent", "PostmanRuntime/7.26.8")
+	h.Add("Accept", "*/*")
+	h.Add("Host", "www.nseindia.com")
+	h.Add("Accept-Encoding", "gzip, deflate, br")
+	h.Add("Connection", "keep-alive")
+	b := bytes.NewBuffer([]byte("{}"))
+	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
+	if err != nil {
+		fmt.Printf("This is error in getOptionData function: %v\n", err)
+		debug.PrintStack()
+	}
+	req.Header = h
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		fmt.Printf("This is error in getOptionData function : %v\n", err)
+		debug.PrintStack()
+	}
+
+	setCookiesLocally(resp.Cookies())
+
+}
+
+func setCookiesLocally(cookieJar []*http.Cookie) {
+
+	cookie = ""
+
+	for _, c := range cookieJar {
+		cookie = cookie + c.String()
+	}
+
 }

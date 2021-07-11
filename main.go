@@ -154,7 +154,7 @@ func getOptionData() ([]byte, error) {
 	var tempData []byte
 	httpClient := &http.Client{}
 	h := http.Header{}
-	h.Add("Cache-Control", "max-age=0")
+	//h.Add("Cache-Control", "max-age=0")
 	h.Add("DNT", "1")
 	h.Add("Upgrade-Insecure-Requests", "1")
 	h.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36")

@@ -190,7 +190,6 @@ func getOptionData() ([]byte, error) {
 		return tempData, err
 	}
 
-	setCookiesLocally(resp.Cookies())
 	if resp.StatusCode != 200 {
 		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -198,7 +197,7 @@ func getOptionData() ([]byte, error) {
 		debug.PrintStack()
 		return tempData, fmt.Errorf("Failed to get optiondata with status code : %v\n", resp.StatusCode)
 	}
-
+	setCookiesLocally(resp.Cookies())
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)

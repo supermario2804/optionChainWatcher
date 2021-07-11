@@ -155,7 +155,7 @@ func getOptionData() ([]byte, error) {
 	httpClient := &http.Client{}
 	h := http.Header{}
 	h.Add("Cache-Control", "max-age=0")
-	h.Add("DNT", "1")
+	//h.Add("DNT", "1")
 	h.Add("Upgrade-Insecure-Requests", "1")
 	//h.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36")
 	//h.Add("Sec-Fetch-User", "?1")
@@ -168,14 +168,14 @@ func getOptionData() ([]byte, error) {
 	//h.Add("cache-control", "no-cache")
 	//h.Add("pragma", "no-cache")
 	//h.Add("referer", "https://www.nseindia.com/option-chain?symbolCode=-10006&symbol=NIFTY&symbol=NIFTY&instrument=-&date=-&segmentLink=17&symbolCount=2&segmentLink=17")
-	h.Add("sec-fetch-dest", "empty")
-	h.Add("sec-fetch-mode", "cors")
+	//h.Add("sec-fetch-dest", "empty")
+	//h.Add("sec-fetch-mode", "cors")
 	//h.Add("sec-fetch-site", "same-origin")
 	h.Add("Host", "www.nseindia.com")
 	h.Add("Connection", "keep-alive")
 	h.Add("User-Agent", "PostmanRuntime/7.26.8")
 	h.Add("Accept", "*/*")
-	//h.Add("Cookie", cookie)
+	h.Add("Cookie", cookie)
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
 	if err != nil {

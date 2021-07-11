@@ -163,7 +163,7 @@ func getOptionData() ([]byte, error) {
 	//h.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
 	h.Add("Sec-Fetch-Site", "none")
 	h.Add("Sec-Fetch-Mode", "navigate")
-	h.Add("Referer", "https://github.com/swapniljariwala/nsepy/blob/master/nsepy/live.py#:~:text=https%3A//www1.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp%3FsymbolCode%3D-9999%26symbol%3DNIFTY%26symbol%3DBANKNIFTY%26instrument%3DOPTIDX%26date%3D-%26segmentLink%3D17%26segmentLink%3D17")
+	h.Add("Referer", "https://www1.nseindia.com/live_market/dynaContent/live_watch/option_chain/optionKeys.jsp?symbolCode=-9999&symbol=NIFTY&symbol=BANKNIFTY&instrument=OPTIDX&date=-&segmentLink=17&segmentLink=17")
 	//h.Add("Accept-Encoding", "gzip, deflate, br")
 	h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
 	b := bytes.NewBuffer([]byte("{}"))

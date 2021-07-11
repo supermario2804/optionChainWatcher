@@ -173,7 +173,7 @@ func getOptionData() ([]byte, error) {
 	h.Add("sec-fetch-site", "same-origin")
 	h.Add("Host", "www.nseindia.com")
 	h.Add("Connection", "keep-alive")
-	h.Add("Cookie", cookie)
+	//h.Add("Cookie", cookie)
 	b := bytes.NewBuffer([]byte("{}"))
 	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
 	if err != nil {

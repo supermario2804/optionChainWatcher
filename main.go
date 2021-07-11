@@ -42,7 +42,7 @@ type Option struct {
 func main() {
 
 	c := cron.New()
-	err := c.AddFunc("@every 5m", cronJob)
+	err := c.AddFunc("@every 1m", cronJob)
 	if err != nil {
 		fmt.Println("Cron error : ", err)
 	}

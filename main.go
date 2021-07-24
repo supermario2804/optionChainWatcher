@@ -4,16 +4,29 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/360EntSecGroup-Skylar/excelize"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"strconv"
 	"time"
 )
 
 var (
-	cookie string
+	cookieJar = []*http.Cookie{}
+	uniHeader = map[string]string{
+		"Host":            "www1.nseindia.com",
+		"User-Agent":      "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0",
+		"Accept":          "*/*",
+		"Accept-Language": "en-US,en;q=0.5",
+		//"Accept-Encoding": "gzip, deflate, br",
+		"X-Requested-With":             "XMLHttpRequest",
+		"Referer":                      "https://www1.nseindia.com/products/content/equities/equities/eq_security.htm",
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+		"Content-Type":                 "application/json;application/x-www-form-urlencoded; charset=UTF-8",
+	}
 	botURL = "https://api.telegram.org/bot1835262567:AAG16zksc089ULVg0AYlTFxbG0XjszEhKCY"
 )
 
@@ -31,11 +44,24 @@ type OptionData struct {
 }
 
 type Option struct {
-	OptType     string
-	StrikePrice int    `json:"strikePrice"`
-	ExpDate     string `json:"expiryDate"`
-	OpenInt     int    `json:"openInterest"`
-	ChgOpenInt  int    `json:"changeinOpenInterest"`
+	OptType                string
+	StrikePrice            int     `json:"strikePrice"`
+	ExpDate                string  `json:"expiryDate"`
+	OpenInt                int     `json:"openInterest"`
+	ChgOpenInt             int     `json:"changeinOpenInterest"`
+	PercentChangeInOpenInt float64 `json:"pchangeinOpenInterest"`
+	TotalTradedVolume      int     `json:"totalTradedVolume"`
+	ImpliedVolatility      float64 `json:"impliedVolatility"`
+	LTP                    float64 `json:"lastPrice"`
+	ChangeLTP              float64 `json:"change"`
+	PecentChangeLTP        float64 `json:"pChange"`
+	TotalBuyQty            int     `json:"totalBuyQuantity"`
+	TotalSellQty           int     `json:"totalSellQuantity"`
+	BidQty                 int     `json:"bidQty"`
+	BidPrice               float64 `json:"bidprice"`
+	AskQty                 int     `json:"askQty"`
+	AskPrice               float64 `json:"askPrice"`
+	UnderLyingValue        float64 `json:"underlyingValue"`
 }
 
 func main() {
@@ -49,17 +75,19 @@ func main() {
 		c.Start()
 		//cronJob()
 		fmt.Println("cron has started..")*/
-	go getCookiesLocally()
-	http.HandleFunc("/", cronJob)
+	//go getCookiesLocally()
+	job()
+	/*	http.HandleFunc("/", cronJob)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "9000" // Default port if not specified
-	}
-	fmt.Printf("Starting server at port %s\n", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		fmt.Printf("Error caused while starting the server: %v\n", err)
-	}
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "9000" // Default port if not specified
+		}
+		fmt.Printf("Starting server at port %s\n", port)
+		if err := http.ListenAndServe(":"+port, nil); err != nil {
+			fmt.Printf("Error caused while starting the server: %v\n", err)
+		}*/
+	time.Sleep(2 * time.Second)
 }
 
 func cronJob(w http.ResponseWriter, r *http.Request) {
@@ -72,12 +100,27 @@ func cronJob(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}*/
+	fmt.Println("Inside the cronJob function")
 	job()
 }
 
-func job() string {
+func job() {
 	loc, _ := time.LoadLocation("Asia/Kolkata")
 	t := time.Now().In(loc)
+
+	h, m, _ := t.Clock()
+	y, mth, d := t.Date()
+	timeDate := fmt.Sprintf("%v-%v-%v", d, mth, y)
+	timeNow := fmt.Sprintf("%v.%v", h, m)
+	fmt.Println("above the excel creation function")
+
+	xls, err := excelize.OpenFile("optionchain.xlsm")
+	if err != nil {
+		fmt.Println("Error while opening excel file : ", err)
+	}
+	index := xls.NewSheet("Sheet1")
+	xls.SetActiveSheet(index)
+
 	/*	a, _, _ := t.Clock()
 
 
@@ -86,42 +129,136 @@ func job() string {
 			fmt.Printf("Cron is running\n")
 			return
 		}*/
-	fmt.Println("Running the cron job function.")
+	fmt.Println("Running the job function.")
 	t = findThursday(t)
 	strikeDate := t.Format("02-Jan-2006")
 	niftyData, err := getOptionData()
 	if err != nil {
-		return "Error Occured"
+		fmt.Printf("Error at 116 : %v\n", err)
 	}
 	fmt.Printf("Successfully fetched optiondata:")
 	niftyOpt := &Nifty{}
 	err = json.Unmarshal(niftyData, niftyOpt)
 	if err != nil {
-		fmt.Printf("This error in Job function: %v\n", err)
+		fmt.Printf("This error in Job function at 122: %v\n", err)
 		debug.PrintStack()
-		return "Error Occured"
 	}
 	data := niftyOpt.Filtered.Data
 	optMap := map[string]OptionData{}
+	priceList := make([]int, 0)
 	for _, opt := range data {
+		priceList = append(priceList, opt.StrikePrice)
 		optMap[strconv.Itoa(opt.StrikePrice)+"|"+opt.ExpDate] = opt
 	}
 
 	currNifty, marketErr := getMarketStatus()
 	if marketErr != nil {
-		return "Error Occured"
+		fmt.Printf("error at line 134 : %v\n", marketErr)
 	}
 
-	textMsg := fmt.Sprintf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
 	fmt.Printf("Current Nifty : %.2f\nStrike Date : %s\n\n", currNifty, strikeDate)
 	midStrkPrice := int(currNifty/100) * 100
-	strkPrceList := make([]int, 0)
 
-	for j := -5; j < 6; j++ {
-		strkPrceList = append(strkPrceList, midStrkPrice+(100*j))
+	factor := currNifty - float64(midStrkPrice)
+
+	if factor > 25 && factor <= 75 {
+		midStrkPrice = midStrkPrice + 50
+	} else if factor > 75 && factor <= 99 {
+		midStrkPrice = midStrkPrice + 100
+	}
+	avgPriceMap := make(map[int]string)
+
+	for j := -2; j < 3; j++ {
+		avgPriceMap[midStrkPrice+(50*j)] = "temp"
 	}
 
-	for _, price := range strkPrceList {
+	excelHeaderList := []string{
+		"OI",
+		"Chg. In OI",
+		"Total Traded Volume",
+		"Implied Volatility",
+		"LTP",
+		"Total Buy Qty",
+		"Total Sell Qty",
+		"Strike Price",
+		"Total Sell Qty",
+		"Total Buy Qty",
+		"LTP",
+		"Implied Volatility",
+		"Total Traded Volume",
+		"Chg. In OI",
+		"OI",
+		"Difference",
+	}
+	xls.SetSheetRow("Sheet1", "A1", &[]string{fmt.Sprintf("Nifty"), fmt.Sprintf("%v", currNifty)})
+	xls.SetSheetRow("Sheet1", "A2", &[]string{fmt.Sprintf("Strike Date"), fmt.Sprintf("%v", strikeDate)})
+	xls.SetSheetRow("Sheet1", "A3", &[]string{"Date:", timeDate})
+	var tempint []interface{}
+	tnow, _ := strconv.ParseFloat(timeNow, 64)
+	tempint = append(tempint, "Time:", tnow)
+	xls.SetSheetRow("Sheet1", "A4", &tempint)
+	xls.SetSheetRow("Sheet1", "A5", &excelHeaderList)
+	var callOIAvg, putOIAvg, cellToStyle int
+
+	for i, price := range priceList {
+		var data []interface{}
+		opt := optMap[strconv.Itoa(price)+"|"+strikeDate]
+		data = append(data, opt.CE.OpenInt)
+		data = append(data, opt.CE.ChgOpenInt)
+		data = append(data, opt.CE.TotalTradedVolume)
+		data = append(data, opt.CE.ImpliedVolatility)
+		data = append(data, opt.CE.LTP)
+		data = append(data, opt.CE.TotalBuyQty)
+		data = append(data, opt.CE.TotalSellQty)
+		data = append(data, opt.CE.StrikePrice)
+		data = append(data, opt.PE.TotalSellQty)
+		data = append(data, opt.PE.TotalBuyQty)
+		data = append(data, opt.PE.LTP)
+		data = append(data, opt.PE.ImpliedVolatility)
+		data = append(data, opt.PE.TotalTradedVolume)
+		data = append(data, opt.PE.ChgOpenInt)
+		data = append(data, opt.PE.OpenInt)
+		diff := opt.PE.OpenInt - opt.CE.OpenInt
+		data = append(data, diff)
+
+		_, ok := avgPriceMap[opt.StrikePrice]
+		if ok {
+			callOIAvg = callOIAvg + opt.CE.ChgOpenInt
+			putOIAvg = putOIAvg + opt.PE.ChgOpenInt
+		}
+
+		if opt.StrikePrice == midStrkPrice {
+			cellToStyle = i + 6
+		}
+		xls.SetSheetRow("Sheet1", "A"+strconv.Itoa(i+6), &data)
+
+	}
+
+	/*xls.SetCellFormula("Sheet1", "B19", "=SUM(B9:B13)")
+	xls.SetCellFormula("Sheet1", "E19", "=SUM(E9:E13)")
+	xls.SetCellFormula("Sheet1", "G19", "=E19-B19")*/
+	xls.SetColWidth("Sheet1", "A", "P", 10)
+	dataStyle, err := xls.NewStyle(`{"border":[{"type":"left","color":"0000FF","style":3},{"type":"top","color":"00FF00","style":4},{"type":"bottom","color":"FFFF00","style":5},{"type":"right","color":"FF0000","style":6}],
+"fill":{"type":"pattern","color":["#E0EBF5"],"pattern":1}}`)
+	headerStyle, err := xls.NewStyle(`{"border":[{"type":"left","color":"000000","style":5},{"type":"top","color":"000000","style":5},{"type":"bottom","color":"000000","style":5},{"type":"right","color":"000000","style":5}],
+"fill":{"type":"pattern","color":["#FEFFD9"],"pattern":1}}`)
+	StrikePriceStyle, err := xls.NewStyle(`{"border":[{"type":"left","color":"000000","style":5},{"type":"top","color":"000000","style":5},{"type":"bottom","color":"000000","style":5},{"type":"right","color":"000000","style":5}],
+"fill":{"type":"pattern","color":["#d7ffd7"],"pattern":1}}`)
+	if err != nil {
+		fmt.Println(err)
+	}
+	callStyleNo := fmt.Sprintf("G%d", cellToStyle)
+	putStyleNo := fmt.Sprintf("I%d", cellToStyle)
+	xls.SetCellStyle("Sheet1", "A6", callStyleNo, dataStyle)
+	xls.SetCellStyle("Sheet1", putStyleNo, "P112", dataStyle)
+	xls.SetCellStyle("Sheet1", "A5", "P5", headerStyle)
+	xls.SetCellStyle("Sheet1", "H6", "H112", StrikePriceStyle)
+	xls.SetCellValue("Sheet1", "E3", callOIAvg)
+	xls.SetCellValue("Sheet1", "F3", putOIAvg)
+	xls.SetCellValue("Sheet1", "G3", putOIAvg-callOIAvg)
+	xls.UpdateLinkedValue()
+	_ = xls.Save()
+	/*	for _, price := range strkPrceList {
 		opt := optMap[strconv.Itoa(price)+"|"+strikeDate]
 
 		oiData := fmt.Sprintf("Strike Price : %d\n", price)
@@ -140,65 +277,49 @@ func job() string {
 			oiData = oiData + "Sell\n"
 		}
 		textMsg = textMsg + "\n" + oiData
-	}
+	}*/
 
-	err = sendToTelegram(textMsg)
-	if err != nil {
-		return "Error Occured"
-	}
+	/*	err = sendToTelegram(textMsg)
+		if err != nil {
+			return "Error Occured"
+		}*/
 
-	return textMsg
 }
 
 func getOptionData() ([]byte, error) {
+	url := "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
 	var tempData []byte
-	httpClient := &http.Client{}
+	client := &http.Client{}
 	h := http.Header{}
-	//h.Add("DNT", "1")
-	//h.Add("Upgrade-Insecure-Requests", "1")
-	//h.Add("Sec-Fetch-User", "?1")
-	//h.Add("Sec-Fetch-Site", "none")
-	//h.Add("Sec-Fetch-Mode", "navigate")
-	//h.Add("Accept-Encoding", "gzip, deflate, br")
-	//h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
-	//h.Add("cache-control", "no-cache")
-	//h.Add("sec-fetch-dest", "empty")
-	//h.Add("sec-fetch-mode", "cors")
-	//h.Add("sec-fetch-site", "same-origin")
-	h.Add("Host", "www.nseindia.com")
-	h.Add("Connection", "keep-alive")
-	h.Add("User-Agent", "PostmanRuntime/7.26.8")
-	h.Add("Accept", "*/*")
-	h.Add("Cookie", "ak_bmsc=BCDF1DD4841FEAD1DB49F3207B2BAC0A~000000000000000000000000000000~YAAQrowsMTlYmot6AQAAYPvulQx1Z3FthUf+ZHFKd22qo1OI/R1LW8kh0B37HbXIJ05JpfAzNQLtF+Usp2d7cnyey3x2n3z8UHnduI/ITnhM3W8sFuTxFBa/Vb1Vl1k49/tpUN7J7RG81MACEZoHeiRbD2bb5mQWuKYDDGRM0mIPk9IbMz1BRo6wv+1kkNH/WjwJX6ES12sYTd/mCh2qSthDOwjdfGegCY6xfecPi+M0ClketnYX3absLA8wwvmCBgmyul04I2b6uoAj8dKddEarR7Ggu13KlJJ94PF+BAPsYKLYPiigmoWScszEY1J5FRREEALRgLFpt6HIizoFVu5tCq05JgNttTjuGnjiZGis8Aw8e4dBgrk6vOw=;")
-	b := bytes.NewBuffer([]byte("{}"))
-	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
-	if err != nil {
-		fmt.Printf("This is error in getOptionData function: %v\n", err)
-		debug.PrintStack()
-		return tempData, err
-	}
-	req.Header = h
 
-	resp, err := httpClient.Do(req)
+	for k, v := range uniHeader {
+		h.Add(k, v)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+
+	req.Header = h
+	err := setCookies()
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)
 		debug.PrintStack()
 		return tempData, err
 	}
 
-	if resp.StatusCode != 200 {
-		fmt.Printf("This is resp.Statuscode : %v\n", resp.StatusCode)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println(string(body))
-		debug.PrintStack()
-		return tempData, fmt.Errorf("Failed to get optiondata with status code : %v\n", resp.StatusCode)
-	}
-	setCookiesLocally(resp.Cookies())
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("This is error in getOptionData function : %v\n", err)
 		debug.PrintStack()
 		return tempData, err
+	}
+	//fmt.Printf("This is body : %+v\n", string(body))
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("Status code is not 200: %v\n", resp.StatusCode)
+		fmt.Printf("This is body : %s\n", string(body))
+		debug.PrintStack()
+		return tempData, fmt.Errorf("statuscode is not 200")
 	}
 
 	_ = resp.Body.Close()
@@ -210,21 +331,11 @@ func getMarketStatus() (float64, error) {
 	tempMarket := map[string][]interface{}{}
 	httpClient := &http.Client{}
 	h := http.Header{}
+	for k, v := range uniHeader {
+		h.Add(k, v)
+	}
 	marketVal := 0.0
-	h.Add("Connection", "keep-alive")
-	h.Add("Cache-Control", "max-age=0")
-	h.Add("DNT", "1")
-	h.Add("Upgrade-Insecure-Requests", "1")
-	h.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36")
-	h.Add("Sec-Fetch-User", "?1")
-	//h.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-	h.Add("Sec-Fetch-Site", "none")
-	h.Add("Sec-Fetch-Mode", "navigate")
-	//h.Add("Accept-Encoding", "gzip, deflate, br")
-	h.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8")
-	b := bytes.NewBuffer([]byte("{}"))
-
-	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/marketStatus", b)
+	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/marketStatus", nil)
 	if err != nil {
 		fmt.Printf("This is Error in getMarketStatus function: %v\n", err)
 		debug.PrintStack()
@@ -254,7 +365,7 @@ func getMarketStatus() (float64, error) {
 	}
 
 	_ = resp.Body.Close()
-	fmt.Printf("This is response body : market status : %s\n", string(body))
+	//fmt.Printf("This is response body : market status : %s\n", string(body))
 
 	err = json.Unmarshal(body, &tempMarket)
 	if err != nil {
@@ -269,7 +380,7 @@ func getMarketStatus() (float64, error) {
 	return marketVal, nil
 }
 
-func sendToTelegram(text string) error {
+func sendMsgToTelegram(text string) error {
 	sendMsgURL := botURL + "/sendmessage"
 	var msg struct {
 		ChatID int    `json:"chat_id"`
@@ -314,42 +425,32 @@ func findThursday(t time.Time) time.Time {
 	return t
 }
 
-func getCookiesLocally() {
-	httpClient := &http.Client{}
+func setCookies() error {
+
+	url := "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY"
+	method := "GET"
+	client := &http.Client{}
 	h := http.Header{}
-	h.Add("User-Agent", "PostmanRuntime/7.26.8")
-	h.Add("Accept", "*/*")
-	h.Add("Host", "www.nseindia.com")
-	h.Add("Accept-Encoding", "gzip, deflate, br")
-	h.Add("Connection", "keep-alive")
-	b := bytes.NewBuffer([]byte("{}"))
-	req, err := http.NewRequest(http.MethodGet, "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY", b)
-	if err != nil {
-		fmt.Printf("This is error in getOptionData function: %v\n", err)
-		debug.PrintStack()
+
+	req, err := http.NewRequest(method, url, nil)
+	for k, v := range uniHeader {
+		h.Add(k, v)
 	}
 	req.Header = h
-
-	resp, err := httpClient.Do(req)
 	if err != nil {
-		fmt.Printf("This is error in getOptionData function : %v\n", err)
-		debug.PrintStack()
+		fmt.Println("***************", err)
+		return err
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println("***************", err)
+		return err
+	}
+	defer res.Body.Close()
+
+	for _, c := range res.Cookies() {
+		cookieJar = append(cookieJar, c)
 	}
 
-	if resp.StatusCode != 200 {
-		getCookiesLocally()
-	}
-
-	setCookiesLocally(resp.Cookies())
-
-}
-
-func setCookiesLocally(cookieJar []*http.Cookie) {
-
-	cookie = ""
-
-	for _, c := range cookieJar {
-		cookie = cookie + c.String()
-	}
-
+	return nil
 }
